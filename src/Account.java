@@ -1,35 +1,43 @@
-// ABSTRACT CLASS — partial implementation. Can have fields + concrete methods
-
 public abstract class Account {
 
-    protected String owner;
-    protected double balance;
+    private final String owner;
+    private final String accountNumber;
+    private double balance;
 
-    public Account(String owner, double balance) { // constructor allowed
+    protected Account(String owner, double initialBalance, String accountNumber) {
+        if (owner == null || owner.isBlank())
+            throw new IllegalArgumentException("Owner is required");
+        if (accountNumber == null || accountNumber.isBlank())
+            throw new IllegalArgumentException("Account number is required");
+        if (initialBalance < 0)
+            throw new IllegalArgumentException("Initial balance cannot be negative");
         this.owner = owner;
-        this.balance = balance;
+        this.balance = initialBalance;
+        this.accountNumber = accountNumber;
     }
 
-    public abstract String getAccountType(); // subclass MUST implement
+    public void deposit(double amount) {
+        if (amount <= 0)
+            throw new IllegalArgumentException("Deposit must be positive");
+        balance += amount;
+    }
 
-    public double getBalance() { return balance; } // concrete method — shared
+    public void withdraw(double amount) throws InsufficientFundsException {
+        if (amount <= 0)
+            throw new IllegalArgumentException("Withdrawal must be positive");
+        if (amount > balance)
+            throw new InsufficientFundsException(
+                    "Cannot withdraw " + amount + ". Available: " + balance);
+        balance -= amount;
+    }
 
-//     Combining both:
-//    public class SavingsAccount extends Account implements Transferable {
-//        public SavingsAccount(String owner, double balance) {
-//            super(owner, balance);
-//        }
-//
-//        @Override
-//        public String getAccountType() {
-//            return "Savings";
-//        }
-//
-//        @Override
-//        public void transfer(BankAccount to, double amount) {
-//            this.balance -= amount;
-//            to.deposit(amount);
-//        }
-//    }
+    public double getBalance() { return balance; }
+    public String getOwner() { return owner; }
+    public String getAccountNumber() { return accountNumber; }
+
+    protected void adjustBalance(double delta) { balance += delta; }
+
+    // Every subclass MUST provide this
+    public abstract String getAccountType();
 
 }

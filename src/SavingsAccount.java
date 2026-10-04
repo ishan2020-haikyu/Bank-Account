@@ -1,33 +1,30 @@
-public class SavingsAccount extends BankAccount{
+public class SavingsAccount extends Account implements Transferable {
+    private final double interestRate; // fraction: 0.05 = 5%
 
-    private double interestRate; // NEW field only in SavingsAccount
-
-    public SavingsAccount(String owner, double balance, double rate) {
-        super(owner, balance); // calls BankAccount constructor
-        this.interestRate = rate;
+    public SavingsAccount(String owner, double balance, String accountNumber, double interestRate) {
+        super(owner, balance, accountNumber);
+        if (interestRate < 0)
+            throw new IllegalArgumentException("Interest rate cannot be negative");
+        this.interestRate = interestRate;
     }
 
-    public SavingsAccount() {
-        System.out.println("Savings Account Created");
-    }
-
-    // NEW behaviour only in SavingsAccount
     public void applyInterest() {
-        double interest = this.getBalance() * interestRate;
-        deposit(interest); // reuses parent's deposit method
+        double interest = getBalance() * interestRate;
+        if (interest > 0) deposit(interest);
     }
 
-    @Override // tells compiler we're intentionally overriding
-    public String getAccountType() {
-        return "Savings Account"; // different behaviour, same method name
+    public double getInterestRate() { return interestRate; }
+
+    @Override
+    public void transfer(Account to, double amount) throws InsufficientFundsException {
+        if (to == null)
+            throw new IllegalArgumentException("Destination account is required");
+        if (to == this)
+            throw new IllegalArgumentException("Cannot transfer to the same account");
+        withdraw(amount);
+        to.deposit(amount);
     }
 
-    public static void main(String[] args) {
-        SavingsAccount savings = new SavingsAccount("Raj", 10000, 0.05);
-        System.out.println("Current Balance before interest - " + savings.getBalance());
-        savings.applyInterest(); // balance becomes 10500.0
-        System.out.println("Current Balance after interest - " + savings.getBalance());
-    }
+    @Override
+    public String getAccountType() { return "Savings Account"; }
 }
-
-
