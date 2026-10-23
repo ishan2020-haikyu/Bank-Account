@@ -10,7 +10,15 @@ public class Main {
         System.out.println("----------------------------");
     }
 
-    public static void main(String[] args) {
+    // Linear search: checks elements one by one, O(n)
+    static Account findInList(List<Account> list, String accountNumber) throws AccountNotFoundException {
+        for (Account acc : list) {
+            if (acc.getAccountNumber().equals(accountNumber)) return acc;
+        }
+        throw new AccountNotFoundException("No account found with number: " + accountNumber);
+    }
+
+    public static void main(String[] args) throws AccountNotFoundException {
         // Exercise 1: BankAccount basics
         BankAccount basic = new BankAccount("Asha", 2000.0, "ACC001");
         basic.deposit(500);
@@ -64,6 +72,8 @@ public class Main {
 //        Add, remove, and retrieve by index. Sort the list by balance using Collections.sort() with a Comparator. Print all accounts before and after sorting.
 //        Then make the list unmodifiable and verify it throws an exception.
 
+        System.out.println("-------------- Exercise 3.1 Solutions --------------");
+
         List<Account> accountList = new ArrayList<>();
         accountList.add(new BankAccount("Priya", 5000.0, "SBI001122"));
         accountList.add(new SavingsAccount("Gopi", 1200.0, "SBI002233", 0.0535));
@@ -105,6 +115,8 @@ public class Main {
 //        Generate a List of 10 transaction IDs where some are duplicates. Convert it to a HashSet to remove
 //        duplicates. Print the size before and after. Then try with a TreeSet and observe the IDs come out sorted.
 //        Override equals() and hashCode() on a custom TransactionId class.
+
+        System.out.println("-------------- Exercise 03. Solutions --------------");
 
         List<String> transactionIds = new ArrayList<>(List.of(
                 "TXN1001",
@@ -151,6 +163,102 @@ public class Main {
         System.out.println("Original: " + ids.size());     // 10
         System.out.println("Unique:   " + unique.size());  // 6
         System.out.println(unique);
+
+//        Exercise 3 — Build an account lookup Map
+//        Create a HashMap using account numbers as keys. Implement a findAccount(String accountNumber) method that returns the account or throws AccountNotFoundException if not found.
+//        Use getOrDefault() and containsKey(). Time how long it takes to find account 10000 in a list vs a map (use System.nanoTime()).
+
+        System.out.println("-------------- Exercise 3.3 Solutions --------------");
+
+        Map<String, Account> accountMap = new HashMap<>();
+
+        Account priya = new BankAccount("Priya", 5000.0, "SBI001122");
+        Account gopi  = new SavingsAccount("Gopi", 1200.0, "SBI002233", 0.0535);
+        Account riya  = new LoanAccount("Riya", 4500.0, "HDFC112233", 20000.0);
+
+        // Add: key = account number, value = the account
+        accountMap.put(priya.getAccountNumber(), priya);
+        accountMap.put(gopi.getAccountNumber(), gopi);
+        accountMap.put(riya.getAccountNumber(), riya);
+
+        // Retrieve by key
+        Account found = accountMap.get("SBI002233");
+        System.out.println(found.getOwner());               // Gopi
+
+        // Missing key returns null
+        System.out.println(accountMap.get("NOPE"));         // Null
+
+        // Check existence
+        System.out.println(accountMap.containsKey("SBI001122"));   // True
+
+        // Remove by key
+        accountMap.remove("HDFC112233");
+        System.out.println(accountMap.size());              // 2
+
+        // Loop over entries
+        for (Map.Entry<String, Account> entry : accountMap.entrySet()) {
+            System.out.println(entry.getKey() + " -> " + entry.getValue().getOwner());
+        }
+
+        final int COUNT = 20_000;
+        List<Account> list = new ArrayList<>();
+        Bank bank = new Bank();
+
+        for (int i = 1; i <= COUNT; i++) {
+            Account acc = new BankAccount("Owner" + i, 1000.0, String.format("ACC%05d", i));
+            list.add(acc);
+            bank.addAccount(acc);
+        }
+
+        String target = "ACC10000";
+
+        // Warm-up: lets the JVM optimise the code before we measure
+        for (int i = 0; i < 1_000; i++) {
+            findInList(list, target);
+            bank.findAccount(target);
+        }
+
+        // Single timing (as the exercise asks)
+        long start = System.nanoTime();
+        findInList(list, target);
+        long listTime = System.nanoTime() - start;
+
+        start = System.nanoTime();
+        bank.findAccount(target);
+        long mapTime = System.nanoTime() - start;
+
+        System.out.println("List lookup: " + listTime + " ns");
+        System.out.println("Map lookup:  " + mapTime + " ns");
+
+        // Average over many runs (more reliable)
+        final int RUNS = 1_000;
+        start = System.nanoTime();
+        for (int i = 0; i < RUNS; i++) findInList(list, target);
+        long listAvg = (System.nanoTime() - start) / RUNS;
+
+        start = System.nanoTime();
+        for (int i = 0; i < RUNS; i++) bank.findAccount(target);
+        long mapAvg = (System.nanoTime() - start) / RUNS;
+
+        System.out.println("List average: " + listAvg + " ns");
+        System.out.println("Map average:  " + mapAvg + " ns");
+        System.out.println("Map is about " + (listAvg / Math.max(mapAvg, 1)) + "x faster");
+
+        // Not-found and getOrDefault demos
+        try {
+            bank.findAccount("NOPE999");
+        } catch (AccountNotFoundException e) {
+            System.out.println("Caught: " + e.getMessage());
+        }
+        System.out.println(bank.findAccountOrDefault("NOPE999", null)); // null, no exception
+
+//        Exercise 4 — Group transactions by type
+//        Create a <Map> where the key is transaction type (CREDIT, DEBIT, TRANSFER) and the value is a list of amounts. Add 10 sample transactions.
+//        Then iterate the map and print the total amount per type. This pattern — grouping data by a key — is used everywhere in Fintech.
+
+
+
+
     }
 }
 
