@@ -18,6 +18,10 @@ public class Main {
         throw new AccountNotFoundException("No account found with number: " + accountNumber);
     }
 
+    static void addTransaction(Map<String, List<Double>> map, String type, double amount) {
+        map.computeIfAbsent(type, k -> new ArrayList<>()).add(amount);
+    }
+
     public static void main(String[] args) throws AccountNotFoundException {
         // Exercise 1: BankAccount basics
         BankAccount basic = new BankAccount("Asha", 2000.0, "ACC001");
@@ -256,9 +260,75 @@ public class Main {
 //        Create a <Map> where the key is transaction type (CREDIT, DEBIT, TRANSFER) and the value is a list of amounts. Add 10 sample transactions.
 //        Then iterate the map and print the total amount per type. This pattern — grouping data by a key — is used everywhere in Fintech.
 
+        System.out.println("-------------- Exercise 3.4 Solutions --------------");
 
+        Map<String, List<Double>> transactions = new HashMap<>();
 
+        addTransaction(transactions, "CREDIT", 5000.0);
+        addTransaction(transactions, "DEBIT", 1200.0);
+        addTransaction(transactions, "CREDIT", 2500.0);
+        addTransaction(transactions, "TRANSFER", 3000.0);
+        addTransaction(transactions, "DEBIT", 450.5);
+        addTransaction(transactions, "CREDIT", 800.0);
+        addTransaction(transactions, "TRANSFER", 1500.0);
+        addTransaction(transactions, "DEBIT", 99.5);
+        addTransaction(transactions, "CREDIT", 10000.0);
+        addTransaction(transactions, "TRANSFER", 750.0);
 
+        for (Map.Entry<String, List<Double>> entry : transactions.entrySet()) {
+            double total = 0;
+            for (double amount : entry.getValue()) {
+                total += amount;
+            }
+            System.out.println(entry.getKey() + ": " + entry.getValue()
+                    + " -> total = " + total);
+        }
+
+        Map<TransactionType, List<Double>> transactions01 = new EnumMap<>(TransactionType.class);
+
+        transactions01.computeIfAbsent(TransactionType.CREDIT, k -> new ArrayList<>()).add(5000.0);
+
+        transactions01.forEach((type, amounts) -> {
+            double total = amounts.stream().mapToDouble(Double::doubleValue).sum();
+            System.out.println(type + " -> " + total);
+        });
+
+        System.out.println("-------------- Exercise 3.5 Solutions --------------");
+        // Repository of Customers
+        Repository<Customer> customers = new Repository<>();
+        customers.add(new Customer(1, "Priya"));
+        customers.add(new Customer(2, "Gopi"));
+
+        System.out.println(customers.getAll());
+        System.out.println(customers.findById(2).map(Customer::getName).orElse("not found")); // Gopi
+        System.out.println(customers.findById(99).isPresent());                                // false
+
+        // Repository of Transactions
+        Repository<Transaction> txns = new Repository<>();
+        txns.add(new Transaction(101, 2500.0));
+        txns.add(new Transaction(102, 99.5));
+
+        System.out.println(txns.getAll());
+        System.out.println(txns.findById(101).get().getAmount());                              // 2500.0
+
+        // Duplicate id must fail
+        try {
+            txns.add(new Transaction(101, 10.0));
+            System.out.println("ERROR: should have thrown!");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Caught: " + e.getMessage());
+        }
+
+        // getAll() must be read-only
+        try {
+            customers.getAll().clear();
+            System.out.println("ERROR: should have thrown!");
+        } catch (UnsupportedOperationException e) {
+            System.out.println("Caught: list is read-only");
+        }
+
+        // Compile-time safety: this line would NOT compile
+        // customers.add(new Transaction(5, 10.0));   // wrong type for Repository<Customer>
     }
 }
 
