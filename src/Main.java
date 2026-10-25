@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class Main {
@@ -329,6 +331,119 @@ public class Main {
 
         // Compile-time safety: this line would NOT compile
         // customers.add(new Transaction(5, 10.0));   // wrong type for Repository<Customer>
+
+
+        System.out.println("-------------- Exercise 4.1 Solutions --------------");
+
+        BankAccount acc = new BankAccount("Priya", 1000.0, "SBI001");
+
+        // Checked: the compiler forces you to handle it
+        try {
+            acc.withdraw(1500.0);
+        } catch (InsufficientFundsException e) {
+            System.out.println(e.getMessage());
+            System.out.println("Shortfall: " + e.getShortfall());     // 500.0
+        }
+
+        // Unchecked: no try/catch required, but you can still catch it
+        try {
+            acc.deposit(-50);
+        } catch (InvalidAmountException e) {
+            System.out.println(e.getMessage() + " | amount=" + e.getAmount());
+        }
+
+        // One catch for the whole checked family
+        try {
+            Bank bank01 = new Bank();
+            bank01.findAccount("NOPE");
+        } catch (BankingException e) {                 // catches both checked types
+            System.out.println("Banking error: " + e.getMessage());
+            if (e instanceof AccountNotFoundException anf) {
+                System.out.println("Missing id: " + anf.getAccountId());
+            }
+        }
+
+        // Unchecked duplicate
+        try {
+            throw new DuplicateTransactionException("TXN1001");
+        } catch (DuplicateTransactionException e) {
+            System.out.println(e.getTransactionId());
+        }
+
+        System.out.println("-------------- Exercise 4.2 Solutions --------------");
+
+        acc.processTransaction(TransactionType.CREDIT, 500.0);          // success
+        acc.processTransaction(TransactionType.DEBIT, 200.0);           // success
+        acc.processTransaction(TransactionType.CREDIT, -50.0);          // negative deposit
+        acc.processTransaction(TransactionType.CREDIT, 0.0);            // zero deposit
+        acc.processTransaction(TransactionType.DEBIT, -10.0);           // negative withdrawal
+        acc.processTransaction(TransactionType.DEBIT, 0.0);             // zero withdrawal
+        acc.processTransaction(TransactionType.DEBIT, 5000.0);          // overdraft
+        acc.processTransaction(TransactionType.CREDIT, Double.NaN);     // NaN
+        acc.processTransaction(null, 100.0);                            // null type
+        acc.processTransaction(TransactionType.TRANSFER, 100.0);        // unsupported type
+
+        System.out.println("Final balance: " + acc.getBalance());       // must still be 1300.0
+
+        // Loan boundary: balance 1000, limit 2000 -> can go down to exactly -2000
+        LoanAccount loan01 = new LoanAccount("Riya", 1000.0, "LON001", 2000.0);
+        loan01.processTransaction(TransactionType.DEBIT, 3000.0);         // success, balance -2000.0
+        loan01.processTransaction(TransactionType.DEBIT, 1.0);            // fails, 1.00 over the limit
+        System.out.println("Loan balance: " + loan01.getBalance());       // -2000.0
+
+
+        System.out.println("-------------- Exercise 4.3 Solutions --------------");
+        // Test 1: normal use
+        try (TransactionLogger logger = new TransactionLogger("audit.log")) {
+            logger.log("CREDIT 5000.0 account=SBI001");
+            logger.log("DEBIT 1200.0 account=SBI001");
+        } catch (IOException e) {
+            System.err.println("Logging failed: " + e.getMessage());
+        }
+
+        // Test 2: file exists and has content
+        File file = new File("audit.log");
+        System.out.println("Exists: " + file.exists() + ", size: " + file.length() + " bytes");
+
+        // Test 3: close() still runs when an exception happens inside the block
+        try (TransactionLogger logger = new TransactionLogger("audit.log")) {
+            logger.log("DEBIT 9999.0 account=SBI001 (about to fail)");
+            throw new IllegalStateException("Simulated failure inside the block");
+        } catch (IllegalStateException e) {
+            System.err.println("Caught: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Logging failed: " + e.getMessage());
+        }
+
+        // Test 4: append mode kept the earlier entries
+        try (var reader = new java.io.BufferedReader(new java.io.FileReader("audit.log"))) {
+            reader.lines().forEach(System.out::println);
+        } catch (IOException e) {
+            System.err.println("Read failed: " + e.getMessage());
+        }
+
+        System.out.println("-------------- Exercise 4.4 Solutions --------------");
+
+        Bank bank02 = new Bank();
+        bank02.addAccount(new BankAccount("Priya", 1000.0, "SBI001"));
+        bank02.addAccount(new BankAccount("Gopi", 2000.0, "SBI002"));
+
+        TransactionProcessor processor = new TransactionProcessor(bank02);
+        processor.processFile("transactions.csv");
+
+        System.out.println("Processed: " + processor.getProcessed());
+        System.out.println("Failed:    " + processor.getFailed());
+
+        try {
+            System.out.println("SBI001 balance: " + bank02.findAccount("SBI001").getBalance());
+            System.out.println("SBI002 balance: " + bank02.findAccount("SBI002").getBalance());
+        } catch (AccountNotFoundException e) {
+            System.err.println(e.getMessage());
+        }
+
+        // File-not-found path: must log and return, not crash
+        new TransactionProcessor(bank02).processFile("missing.csv");
+
     }
 }
 

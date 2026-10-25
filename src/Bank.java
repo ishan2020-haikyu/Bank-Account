@@ -15,7 +15,7 @@ public class Bank {
 
     public Account findAccount(String accountNumber) throws AccountNotFoundException {
         if (accountNumber == null || accountNumber.isBlank())
-            throw new IllegalArgumentException("Account number is required");
+            throw new AccountNotFoundException(accountNumber);
 
         Account account = accounts.get(accountNumber);
         if (account == null)

@@ -13,9 +13,7 @@ public class LoanAccount extends Account {
         if (amount <= 0)
             throw new IllegalArgumentException("Withdrawal must be positive");
         if (getBalance() - amount < -creditLimit)
-            throw new InsufficientFundsException(
-                    "Cannot withdraw " + amount + ". Balance: " + getBalance()
-                            + ", credit limit: " + creditLimit);
+            throw new InsufficientFundsException(getBalance() + creditLimit, amount);
         adjustBalance(-amount);
     }
 
