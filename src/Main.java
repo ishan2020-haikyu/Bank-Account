@@ -24,7 +24,7 @@ public class Main {
         map.computeIfAbsent(type, k -> new ArrayList<>()).add(amount);
     }
 
-    public static void main(String[] args) throws AccountNotFoundException {
+    public static void main(String[] args) throws AccountNotFoundException, TransactionPersistenceException {
         // Exercise 1: BankAccount basics
         BankAccount basic = new BankAccount("Asha", 2000.0, "ACC001");
         basic.deposit(500);
@@ -372,24 +372,24 @@ public class Main {
 
         System.out.println("-------------- Exercise 4.2 Solutions --------------");
 
-        acc.processTransaction(TransactionType.CREDIT, 500.0);          // success
-        acc.processTransaction(TransactionType.DEBIT, 200.0);           // success
-        acc.processTransaction(TransactionType.CREDIT, -50.0);          // negative deposit
-        acc.processTransaction(TransactionType.CREDIT, 0.0);            // zero deposit
-        acc.processTransaction(TransactionType.DEBIT, -10.0);           // negative withdrawal
-        acc.processTransaction(TransactionType.DEBIT, 0.0);             // zero withdrawal
-        acc.processTransaction(TransactionType.DEBIT, 5000.0);          // overdraft
-        acc.processTransaction(TransactionType.CREDIT, Double.NaN);     // NaN
-        acc.processTransaction(null, 100.0);                            // null type
-        acc.processTransaction(TransactionType.TRANSFER, 100.0);        // unsupported type
-
-        System.out.println("Final balance: " + acc.getBalance());       // must still be 1300.0
-
-        // Loan boundary: balance 1000, limit 2000 -> can go down to exactly -2000
-        LoanAccount loan01 = new LoanAccount("Riya", 1000.0, "LON001", 2000.0);
-        loan01.processTransaction(TransactionType.DEBIT, 3000.0);         // success, balance -2000.0
-        loan01.processTransaction(TransactionType.DEBIT, 1.0);            // fails, 1.00 over the limit
-        System.out.println("Loan balance: " + loan01.getBalance());       // -2000.0
+//        acc.processTransaction(TransactionType.CREDIT, 500.0);          // success
+//        acc.processTransaction(TransactionType.DEBIT, 200.0);           // success
+//        acc.processTransaction(TransactionType.CREDIT, -50.0);          // negative deposit
+//        acc.processTransaction(TransactionType.CREDIT, 0.0);            // zero deposit
+//        acc.processTransaction(TransactionType.DEBIT, -10.0);           // negative withdrawal
+//        acc.processTransaction(TransactionType.DEBIT, 0.0);             // zero withdrawal
+//        acc.processTransaction(TransactionType.DEBIT, 5000.0);          // overdraft
+//        acc.processTransaction(TransactionType.CREDIT, Double.NaN);     // NaN
+//        acc.processTransaction(null, 100.0);                            // null type
+//        acc.processTransaction(TransactionType.TRANSFER, 100.0);        // unsupported type
+//
+//        System.out.println("Final balance: " + acc.getBalance());       // must still be 1300.0
+//
+//        // Loan boundary: balance 1000, limit 2000 -> can go down to exactly -2000
+//        LoanAccount loan01 = new LoanAccount("Riya", 1000.0, "LON001", 2000.0);
+//        loan01.processTransaction(TransactionType.DEBIT, 3000.0);         // success, balance -2000.0
+//        loan01.processTransaction(TransactionType.DEBIT, 1.0);            // fails, 1.00 over the limit
+//        System.out.println("Loan balance: " + loan01.getBalance());       // -2000.0
 
 
         System.out.println("-------------- Exercise 4.3 Solutions --------------");
@@ -443,6 +443,23 @@ public class Main {
 
         // File-not-found path: must log and return, not crash
         new TransactionProcessor(bank02).processFile("missing.csv");
+
+        System.out.println("-------------- Exercise 4.5 Solutions --------------");
+
+        BankAccount acc01 = new BankAccount("Priya", 1000.0, "SBI001");
+
+        try {
+            acc01.processTransaction(TransactionType.CREDIT, 500.0);
+        } catch (TransactionPersistenceException e) {
+            System.err.println("Caught: " + e.getMessage());
+            System.err.println("Cause:  " + e.getCause());
+
+            if (e.getCause() instanceof java.sql.SQLException sql) {
+                System.err.println("SQLState: " + sql.getSQLState() + ", code: " + sql.getErrorCode());
+            }
+
+            e.printStackTrace();    // prints BOTH exceptions
+        }
 
     }
 }

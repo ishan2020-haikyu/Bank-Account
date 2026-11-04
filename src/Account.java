@@ -1,3 +1,5 @@
+import java.sql.SQLException;
+
 public abstract class Account {
 
     private final String owner;
@@ -33,27 +35,29 @@ public abstract class Account {
         balance -= amount;
     }
 
-    public boolean processTransaction(TransactionType type, double amount) {
+    public boolean processTransaction(TransactionType type, double amount)
+            throws TransactionPersistenceException {
         try {
-            if (type == null)
-                throw new IllegalArgumentException("Transaction type is required");
-
             switch (type) {
                 case CREDIT -> deposit(amount);
                 case DEBIT  -> withdraw(amount);
                 default     -> throw new UnsupportedOperationException("Unsupported type: " + type);
             }
-            System.out.println("OK " + type + " " + amount + " -> balance " + getBalance());
+            saveToDatabase(type, amount);          // can throw SQLException
             return true;
 
-        } catch (InsufficientFundsException e) {                 // checked, most specific first
+        } catch (SQLException e) {
+            // Wrap and rethrow, passing the original as the cause
+            throw new TransactionPersistenceException("DB write failed", e);
+
+        } catch (InsufficientFundsException e) {
             System.err.println("[FAILED] " + e.getMessage());
-        } catch (InvalidAmountException e) {                     // must come BEFORE IllegalArgumentException
+        } catch (InvalidAmountException e) {
             System.err.println("[INVALID] " + e.getMessage());
         } catch (IllegalArgumentException | UnsupportedOperationException e) {
             System.err.println("[BAD REQUEST] " + e.getMessage());
         }
-        return false;                                            // reached only after a failure
+        return false;
     }
 
     public double getBalance() { return balance; }
@@ -64,5 +68,11 @@ public abstract class Account {
 
     // Every subclass MUST provide this
     public abstract String getAccountType();
+
+    // In Account (or a small TransactionRepository)
+    protected void saveToDatabase(TransactionType type, double amount) throws SQLException {
+        // Simulated failure, as if the connection dropped
+        throw new SQLException("Connection refused: db-host:5432", "08001", 1042);
+    }
 
 }
