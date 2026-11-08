@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -461,6 +462,72 @@ public class Main {
             e.printStackTrace();    // prints BOTH exceptions
         }
 
+        System.out.println("-------------- Exercise 5.1 Solutions --------------");
+
+        List<Account> accounts01 = List.of(
+                new BankAccount("Priya", 5000.0, "SBI001122"),
+                new SavingsAccount("Gopi", 1200.0, "SBI002233", 0.0535),
+                new LoanAccount("Riya", 4500.0, "HDFC112233", 20000.0),
+                new BankAccount("Sanju", 5500.0, "SBI00123456"),
+                new SavingsAccount("Mumpu", 8200.0, "SBI00223377", 0.0735),
+                new BankAccount("Anil", 9100.0, "SBI00998877")
+        );
+
+        // Loop (3 lines)
+        for (Account acc02 : accounts01) {
+            System.out.println(acc02);
+        }
+        // Stream (1 line)
+        accounts.forEach(System.out::println);
+
+        // Loop (5 lines)
+        double total01 = 0;
+        for (Account acc02 : accounts01) {
+            total01 += a.getBalance();
+        }
+        System.out.println(total01);
+        // Stream (1 line)
+        double total = accounts.stream().mapToDouble(Account::getBalance).sum();
+
+        // Loop (6 lines)
+        List<Account> rich01 = new ArrayList<>();
+        for (Account acc02 : accounts01) {
+            if (acc02.getBalance() > 5000) {
+                rich01.add(acc02);
+            }
+        }
+        // Stream (3 lines)
+        List<Account> rich = accounts.stream()
+                .filter(acc02 -> acc02.getBalance() > 5000)
+                .toList();
+
+        // Loop version (7 lines)
+        List<Account> sorted = new ArrayList<>(rich);
+        Collections.sort(sorted, new Comparator<Account>() {
+            public int compare(Account x, Account y) {
+                return x.getOwner().compareTo(y.getOwner());
+            }
+        });
+        // Stream: folded into the pipeline below
+
+        // Loop (8 lines)
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < sorted.size(); i++) {
+            sb.append(sorted.get(i).getOwner());
+            if (i < sorted.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        String namesLoop = sb.toString();
+
+        String namesStream = accounts.stream()
+                .filter(acc02 -> acc02.getBalance() > 5000)
+                .sorted(Comparator.comparing(Account::getOwner))
+                .map(Account::getOwner)
+                .collect(Collectors.joining(", "));
+        System.out.println("Loop:   " + namesLoop);
+        System.out.println("Stream: " + namesStream);
+        System.out.println("Identical: " + namesLoop.equals(namesStream));
     }
 }
 

@@ -75,4 +75,9 @@ public abstract class Account {
         throw new SQLException("Connection refused: db-host:5432", "08001", 1042);
     }
 
+    @Override
+    public String toString() {
+        return getOwner() + " (" + getAccountType() + ", " + getBalance() + ")";
+    }
+
 }
