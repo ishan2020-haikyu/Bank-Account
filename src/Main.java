@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -308,15 +309,18 @@ public class Main {
 
         // Repository of Transactions
         Repository<Transaction> txns = new Repository<>();
-        txns.add(new Transaction(101, 2500.0));
-        txns.add(new Transaction(102, 99.5));
+//        txns.add(new Transaction(101, 2500.0));
+        new Transaction(101, "SBI001", TransactionType.CREDIT, 2500.0, LocalDate.of(2026, 11, 1));
+//        txns.add(new Transaction(102, 99.5));
+        new Transaction(102, "SBI002", TransactionType.CREDIT, 99.5, LocalDate.of(2026, 11, 1));
 
         System.out.println(txns.getAll());
-        System.out.println(txns.findById(101).get().getAmount());                              // 2500.0
+//        System.out.println(txns.findById(101).get().getAmount());                              // 2500.0
 
         // Duplicate id must fail
         try {
-            txns.add(new Transaction(101, 10.0));
+//            txns.add(new Transaction(101, 10.0));
+            new Transaction(101, "SBI001", TransactionType.CREDIT, 10.0, LocalDate.of(2026, 11, 1));
             System.out.println("ERROR: should have thrown!");
         } catch (IllegalArgumentException e) {
             System.out.println("Caught: " + e.getMessage());
@@ -528,6 +532,67 @@ public class Main {
         System.out.println("Loop:   " + namesLoop);
         System.out.println("Stream: " + namesStream);
         System.out.println("Identical: " + namesLoop.equals(namesStream));
+
+        System.out.println("-------------- Exercise 5.2 Solutions --------------");
+
+        List<Transaction> txns01 = List.of(
+                new Transaction(1,  "SBI001", TransactionType.CREDIT,  5000.00, LocalDate.of(2026, 11, 1)),
+                new Transaction(2,  "SBI002", TransactionType.DEBIT,   1200.50, LocalDate.of(2026, 11, 1)),
+                new Transaction(3,  "SBI001", TransactionType.DEBIT,    450.00, LocalDate.of(2026, 11, 2)),
+                new Transaction(4,  "SBI003", TransactionType.CREDIT, 12000.00, LocalDate.of(2026, 11, 2)),
+                new Transaction(5,  "SBI002", TransactionType.CREDIT,  2500.00, LocalDate.of(2026, 11, 3)),
+                new Transaction(6,  "SBI001", TransactionType.CREDIT,   800.00, LocalDate.of(2026, 11, 4)),
+                new Transaction(7,  "SBI003", TransactionType.DEBIT,   3000.00, LocalDate.of(2026, 11, 5)),
+                new Transaction(8,  "SBI002", TransactionType.DEBIT,     99.50, LocalDate.of(2026, 11, 6)),
+                new Transaction(9,  "SBI001", TransactionType.DEBIT,   1500.00, LocalDate.of(2026, 11, 7)),
+                new Transaction(10, "SBI003", TransactionType.CREDIT,   750.00, LocalDate.of(2026, 11, 8))
+        );
+
+        Map<TransactionType, List<Transaction>> byType = txns01.stream()
+                .collect(Collectors.groupingBy(
+                        Transaction::getType,
+                        () -> new EnumMap<>(TransactionType.class),
+                        Collectors.toList()));
+
+        Map<TransactionType, Double> totalByType = txns01.stream()
+                .collect(Collectors.groupingBy(
+                        Transaction::getType,
+                        () -> new EnumMap<>(TransactionType.class),
+                        Collectors.summingDouble(Transaction::getAmount)));
+
+        Optional<Transaction> largest = txns01.stream()
+                .max(Comparator.comparingDouble(Transaction::getAmount));
+
+        Map<String, Long> countByAccount = txns01.stream()
+                .collect(Collectors.groupingBy(
+                        Transaction::getAccountId,
+                        TreeMap::new,
+                        Collectors.counting()));
+
+        // ---- Report: no for-loops anywhere ----
+        System.out.println("========== TRANSACTION REPORT ==========");
+        System.out.println("Total transactions: " + txns01.size());
+
+        System.out.println("\nTransactions by type");
+        byType.forEach((type, txnList) -> {
+            System.out.println(type + " (" + txnList.size() + ")");
+            txnList.forEach(txn -> System.out.printf(Locale.US, "  %-7s %10.2f  %s%n",
+                    txn.getAccountId(), txn.getAmount(), txn.getDate()));
+        });
+
+        System.out.println("\nTotal amount per type");
+        totalByType.forEach((type, typeTotal) ->
+                System.out.printf(Locale.US, "  %-8s %10.2f%n", type, typeTotal));
+
+        System.out.println("\nLargest transaction");
+        largest.ifPresentOrElse(
+                txn -> System.out.printf(Locale.US, "  %.2f %s on %s (%s)%n",
+                        txn.getAmount(), txn.getType(), txn.getAccountId(), txn.getDate()),
+                () -> System.out.println("  none"));
+
+        System.out.println("\nTransactions per account");
+        countByAccount.forEach((id, count) ->
+                System.out.printf("  %-8s %d%n", id, count));
     }
 }
 
