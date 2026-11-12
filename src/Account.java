@@ -5,6 +5,11 @@ public abstract class Account {
     private final String owner;
     private final String accountNumber;
     private double balance;
+    private boolean active = true;     // new accounts start active
+
+    public boolean isActive() { return active; }
+    public void deactivate() { active = false; }
+    public void activate() { active = true; }
 
     protected Account(String owner, double initialBalance, String accountNumber) {
         if (owner == null || owner.isBlank())

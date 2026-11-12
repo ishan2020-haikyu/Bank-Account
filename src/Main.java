@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -24,6 +25,55 @@ public class Main {
 
     static void addTransaction(Map<String, List<Double>> map, String type, double amount) {
         map.computeIfAbsent(type, k -> new ArrayList<>()).add(amount);
+    }
+
+    // Reusable filter: works with any predicate
+    static List<Account> filter(List<Account> accounts, Predicate<Account> rule) {
+        return accounts.stream().filter(rule).toList();
+    }
+
+    static String owners(List<Account> accounts) {
+        return accounts.stream().map(Account::getOwner).collect(Collectors.joining(", "));
+    }
+
+    static void filterChain() {
+        // Base predicates
+        Predicate<Account> isHighValue      = acc -> acc.getBalance() > 5000;
+        Predicate<Account> isActive         = Account::isActive;
+        Predicate<Account> isSavingsAccount = acc -> acc instanceof SavingsAccount;
+
+        // Composed predicates
+        Predicate<Account> highValueActive      = isHighValue.and(isActive);
+        Predicate<Account> highValueOrSavings   = isHighValue.or(isSavingsAccount);
+        Predicate<Account> inactive             = isActive.negate();
+        Predicate<Account> activeHighValueSaver = highValueActive.and(isSavingsAccount);
+        Predicate<Account> highValueNonSavings  = isHighValue.and(Predicate.not(isSavingsAccount));
+
+        // Test data
+        List<Account> accounts = new ArrayList<>(List.of(
+                new BankAccount("Priya", 5000.0, "SBI001"),
+                new SavingsAccount("Gopi", 1200.0, "SBI002", 0.0535),
+                new LoanAccount("Riya", 4500.0, "HDFC003", 20000.0),
+                new BankAccount("Sanju", 5500.0, "SBI004"),
+                new SavingsAccount("Mumpu", 8200.0, "SBI005", 0.0735),
+                new BankAccount("Anil", 9100.0, "SBI006"),
+                new SavingsAccount("Kavya", 15000.0, "SBI007", 0.06),
+                new SavingsAccount("Dev", 6000.0, "SBI008", 0.06)
+        ));
+        accounts.get(5).deactivate();   // Anil
+        accounts.get(7).deactivate();   // Dev
+
+        System.out.println("High value:            " + owners(filter(accounts, isHighValue)));
+        System.out.println("High value AND active: " + owners(filter(accounts, highValueActive)));
+        System.out.println("High value OR savings: " + owners(filter(accounts, highValueOrSavings)));
+        System.out.println("Inactive (negate):     " + owners(filter(accounts, inactive)));
+        System.out.println("Active HV savings:     " + owners(filter(accounts, activeHighValueSaver)));
+        System.out.println("HV non-savings:        " + owners(filter(accounts, highValueNonSavings)));
+
+        // De Morgan check: not(A or B) == not(A) and not(B)
+        List<Account> left  = filter(accounts, highValueOrSavings.negate());
+        List<Account> right = filter(accounts, isHighValue.negate().and(isSavingsAccount.negate()));
+        System.out.println("De Morgan holds:       " + left.equals(right));
     }
 
     public static void main(String[] args) throws AccountNotFoundException, TransactionPersistenceException {
@@ -593,6 +643,12 @@ public class Main {
         System.out.println("\nTransactions per account");
         countByAccount.forEach((id, count) ->
                 System.out.printf("  %-8s %d%n", id, count));
+
+
+        System.out.println("-------------- Exercise 5.3 Solutions --------------");
+
+        filterChain();
+
     }
 }
 
