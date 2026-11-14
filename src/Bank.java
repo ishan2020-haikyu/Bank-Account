@@ -1,5 +1,6 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class Bank {
     private final Map<String, Account> accounts = new HashMap<>();
@@ -13,17 +14,16 @@ public class Bank {
         accounts.put(number, account);
     }
 
-    public Account findAccount(String accountNumber) throws AccountNotFoundException {
-        if (accountNumber == null || accountNumber.isBlank())
-            throw new AccountNotFoundException(accountNumber);
-
-        Account account = accounts.get(accountNumber);
-        if (account == null)
-            throw new AccountNotFoundException("No account found with number: " + accountNumber);
-        return account;
+    public Optional<Account> findAccountById(String id) {
+        if (id == null || id.isBlank())
+            return Optional.empty();
+        return Optional.ofNullable(accounts.get(id));
     }
 
-    public Account findAccountOrDefault(String accountNumber, Account fallback) {
-        return accounts.getOrDefault(accountNumber, fallback);
+    public Account findAccount(String id) throws AccountNotFoundException {
+        return findAccountById(id)
+                .orElseThrow(() -> new AccountNotFoundException(id));
     }
+
+    public int size() { return accounts.size(); }
 }

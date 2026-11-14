@@ -308,7 +308,7 @@ public class Main {
         } catch (AccountNotFoundException e) {
             System.out.println("Caught: " + e.getMessage());
         }
-        System.out.println(bank.findAccountOrDefault("NOPE999", null)); // null, no exception
+        System.out.println(bank.findAccountById("NOPE999")); // null, no exception
 
 //        Exercise 4 — Group transactions by type
 //        Create a <Map> where the key is transaction type (CREDIT, DEBIT, TRANSFER) and the value is a list of amounts. Add 10 sample transactions.
@@ -649,6 +649,7 @@ public class Main {
 
         filterChain();
 
+        
     }
 }
 
