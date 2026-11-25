@@ -155,7 +155,7 @@ public class Main {
         accountList.forEach(Main::printAccountSummary);
 
 // Sort
-        Collections.sort(accountList, Comparator.comparingDouble(Account::getBalance));
+//        Collections.sort(accountList, Comparator.comparingDouble(Account::getBalance));
 
         System.out.println("---- After sorting ----");
         accountList.forEach(Main::printAccountSummary);
